@@ -75,7 +75,7 @@ void priem() {
          // Выводим 0, если значение ниже порогового значения
         bit += "0";
       }
-      delayMicroseconds(600000-(micros()-start_time)); // Задержка в 40 миллисекунд между битами
+      delayMicroseconds(400000-(micros()-start_time)); // Задержка в 40 миллисекунд между битами
     }
     bait[i] = bit;
   }
