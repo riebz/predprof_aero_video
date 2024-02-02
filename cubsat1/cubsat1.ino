@@ -60,7 +60,7 @@ void peredatchik(){
           digitalWrite(laserPin, 0);
           digitalWrite(laserPin2, 0);
         }
-        delayMicroseconds(600000-(micros()-start_time));
+        delayMicroseconds(400000-(micros()-start_time));
       }
     } 
   digitalWrite(laserPin, 0);
