@@ -16,7 +16,7 @@ void setup() {
 }
 
 void loop() {
-  char message[]  = "Status: Warning"; // Сообщение для передачи
+  char message[]  = "Status: Working"; // Сообщение для передачи
   
   buf.pack(message);
   for (int i = 0; i<2;i++){
@@ -26,7 +26,7 @@ void loop() {
     delay(1000);
     peredatchik();
   }
-    char message1[]  = "Status: Working";
+    char message1[]  = "Status: Warning";
     buf.pack(message1);
     digitalWrite(laserPin, 255);
     digitalWrite(laserPin2, 255);  
