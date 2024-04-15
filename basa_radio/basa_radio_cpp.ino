@@ -5,6 +5,9 @@
 //--------------------- НАСТРОЙКИ ----------------------
 
 //--------------------- БИБЛИОТЕКИ ----------------------
+#include "OLED_I2C.h"           // подключаем библиотеку для экрана
+OLED myOLED(SDA, SCL, 8);  // создаем объект myOLED
+
 #include <SPI.h>
 #include "nRF24L01.h"
 #include "RF24.h"
@@ -16,21 +19,34 @@ byte pipeNo;
 
 int recieved_data[100];   // массив принятых данных
 int telemetry[1];       // массив данных телеметрии (то что шлём на передатчик)
+
+// подключаем шрифты для текста и цифр
+extern uint8_t SmallFont[];
 //--------------------- ПЕРЕМЕННЫЕ ----------------------
 
 void setup() {
   Serial.begin(115200);
+   myOLED.begin();
   radioSetup();
 }
 
 void loop() {
   while (radio.available(&pipeNo)) {                    // слушаем эфир
     radio.read(&recieved_data, sizeof(recieved_data));  // чиатем входящий сигнал
+    String res = "";
+    
+   myOLED.clrScr(); // очищаем экран от надписей
     for (int i = 0; i < (sizeof(recieved_data)/sizeof(*recieved_data)); i++){
   if (recieved_data[i] != 0) {
     Serial.print((char)recieved_data[i]);
+    res+=(char)recieved_data[i];
+    // выводим текст по центру экрана
+    
   }
 }
+  myOLED.setFont(SmallFont);
+      myOLED.print(res, CENTER, 10);
+      myOLED.update();
   Serial.println();
     // формируем пакет данных телеметрии (напряжение АКБ, скорость, температура...)
     if (Serial.available()) {
@@ -65,3 +81,8 @@ void radioSetup() {             // настройка радио
   radio.powerUp();         // начать работу
   radio.startListening();  // начинаем слушать эфир, мы приёмный модуль
 }
+
+
+
+
+
