@@ -22,47 +22,56 @@ int telemetry[1];       // массив данных телеметрии (то 
 
 // подключаем шрифты для текста и цифр
 extern uint8_t SmallFont[];
+const int maxMessages = 4; // Максимальное кол-во сохраняемых сообщений
+String messages[maxMessages];
+int yPos[maxMessages];
 //--------------------- ПЕРЕМЕННЫЕ ----------------------
+
 
 void setup() {
   Serial.begin(115200);
-   myOLED.begin();
+  myOLED.begin();
+  myOLED.setFont(SmallFont);
   radioSetup();
+  // Инициализируем позиции сообщений
+  for (int i = 0; i < maxMessages; i++) {
+    yPos[i] = i * 12; // высота строки 12 пикселей
+  }
 }
 
 void loop() {
-  while (radio.available(&pipeNo)) {                    // слушаем эфир
-    radio.read(&recieved_data, sizeof(recieved_data));  // чиатем входящий сигнал
-    String res = "";
+  while (radio.available(&pipeNo)) {
+    radio.read(&recieved_data, sizeof(recieved_data));
+    String newMessage;
+    for (int i = 0; i < (sizeof(recieved_data) / sizeof(*recieved_data)); i++) {
+      if (recieved_data[i] != 0) {
+        newMessage += (char)recieved_data[i];
+      }
+    }
+    Serial.println(newMessage);
+    displayNewMessage(newMessage);
     
-   myOLED.clrScr(); // очищаем экран от надписей
-    for (int i = 0; i < (sizeof(recieved_data)/sizeof(*recieved_data)); i++){
-  if (recieved_data[i] != 0) {
-    Serial.print((char)recieved_data[i]);
-    res+=(char)recieved_data[i];
-    // выводим текст по центру экрана
-    
+    // Здесь остается ваш код, связанный с телеметрией и отправкой данных...
   }
 }
-  myOLED.setFont(SmallFont);
-      myOLED.print(res, CENTER, 10);
-      myOLED.update();
-  Serial.println();
-    // формируем пакет данных телеметрии (напряжение АКБ, скорость, температура...)
-    if (Serial.available()) {
-    String message = Serial.readString();
-    // Если сообщение содержит команду "update", отправляем команду обновления на 2-й кубсат
-    if (message.indexOf("update") == 0) {
-      telemetry[0] = 1; 
-      Serial.println(message);
-    }
-    } else{
-      telemetry[0] = 0; 
-    }
-    
-    // отправляем пакет телеметрии
-    radio.writeAckPayload(pipeNo, &telemetry, sizeof(telemetry));
+
+void displayNewMessage(String message) {
+  myOLED.clrScr(); // Очищаем экран
+  // Сдвигаем предыдущие сообщения вниз
+  for (int i = maxMessages - 1; i > 0; i--) {
+    messages[i] = messages[i - 1];
+    yPos[i] = yPos[i - 1] + 12;
   }
+  // Добавляем новое сообщение на верх экрана
+  messages[0] = message;
+  yPos[0] = 0;
+  // Выводим сообщения на экран
+  for (int i = 0; i < maxMessages; i++) {
+    if (yPos[i] < myOLED.getHeight()) { // Если сообщение находится в пределах экрана
+      myOLED.print(messages[i], CENTER, yPos[i]);
+    }
+  }
+  myOLED.update();
 }
 
 void radioSetup() {             // настройка радио
@@ -81,8 +90,3 @@ void radioSetup() {             // настройка радио
   radio.powerUp();         // начать работу
   radio.startListening();  // начинаем слушать эфир, мы приёмный модуль
 }
-
-
-
-
-
