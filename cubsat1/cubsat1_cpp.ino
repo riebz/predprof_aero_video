@@ -16,18 +16,24 @@ void setup() {
 }
 
 void loop() {
-  char message[]  = "Status: Working"; // Сообщение для передачи
+  char message[]  = "Status: Warning"; // Сообщение для передачи
   
   buf.pack(message);
-  for (int i = 0; i<2;i++){
+  
     buf.pack(message);
     digitalWrite(laserPin, 255);
     digitalWrite(laserPin2, 255);  
     delay(1000);
     peredatchik();
-  }
-    char message1[]  = "Status: Warning";
+  
+    char message1[]  = "Temp -5C      .";
     buf.pack(message1);
+    digitalWrite(laserPin, 255);
+    digitalWrite(laserPin2, 255);  
+    delay(1000);
+    peredatchik();
+    char message2[]  = "Battery: 94%  .";
+    buf.pack(message2);
     digitalWrite(laserPin, 255);
     digitalWrite(laserPin2, 255);  
     delay(1000);
@@ -60,7 +66,7 @@ void peredatchik(){
           digitalWrite(laserPin, 0);
           digitalWrite(laserPin2, 0);
         }
-        delayMicroseconds(400000-(micros()-start_time));
+        delayMicroseconds(600000-(micros()-start_time));
       }
     } 
   digitalWrite(laserPin, 0);
