@@ -1,4 +1,5 @@
 // ЭТО СКЕТЧ ПРИЁМНИКА!!!
+
 //--------------------- НАСТРОЙКИ ----------------------
 #define CH_NUM 0x60   // номер канала (должен совпадать с передатчиком)
 //--------------------- НАСТРОЙКИ ----------------------
@@ -12,6 +13,7 @@ OLED myOLED(SDA, SCL, 8);  // создаем объект myOLED
 #include "RF24.h"
 RF24 radio(9, 10); 
 //--------------------- БИБЛИОТЕКИ ----------------------
+
 //--------------------- ПЕРЕМЕННЫЕ ----------------------
 byte pipeNo;
 
@@ -20,33 +22,35 @@ int telemetry[1];       // массив данных телеметрии (то 
 
 // подключаем шрифты для текста и цифр
 extern uint8_t SmallFont[];
+const int maxMessages = 4; // Максимальное кол-во сохраняемых сообщений
+String messages[maxMessages];
+int yPos[maxMessages];
 //--------------------- ПЕРЕМЕННЫЕ ----------------------
+
 
 void setup() {
   Serial.begin(115200);
-   myOLED.begin();
+  myOLED.begin();
+  myOLED.setFont(SmallFont);
   radioSetup();
+  // Инициализируем позиции сообщений
+  for (int i = 0; i < maxMessages; i++) {
+    yPos[i] = i * 12; // высота строки 12 пикселей
+  }
 }
 
 void loop() {
-  while (radio.available(&pipeNo)) {                    // слушаем эфир
-    radio.read(&recieved_data, sizeof(recieved_data));  // чиатем входящий сигнал
-    String res = "";
-
-   myOLED.clrScr(); // очищаем экран от надписей
-    for (int i = 0; i < (sizeof(recieved_data)/sizeof(*recieved_data)); i++){
-  if (recieved_data[i] != 0) {
-    Serial.print((char)recieved_data[i]);
-    res+=(char)recieved_data[i];
-    // выводим текст по центру экрана
-
-  }
-}
-  myOLED.setFont(SmallFont);
-      myOLED.print(res, CENTER, 10);
-      myOLED.update();
-  Serial.println();
-    // формируем пакет данных телеметрии (напряжение АКБ, скорость, температура...)
+  while (radio.available(&pipeNo)) {
+    radio.read(&recieved_data, sizeof(recieved_data));
+    String newMessage;
+    for (int i = 0; i < (sizeof(recieved_data) / sizeof(*recieved_data)); i++) {
+      if (recieved_data[i] != 0) {
+        newMessage += (char)recieved_data[i];
+      }
+    }
+    Serial.println(newMessage);
+    displayNewMessage(newMessage);
+    
     if (Serial.available()) {
     String message = Serial.readString();
     // Если сообщение содержит команду "update", отправляем команду обновления на 2-й кубсат
@@ -62,6 +66,26 @@ void loop() {
     radio.writeAckPayload(pipeNo, &telemetry, sizeof(telemetry));
   }
 }
+
+void displayNewMessage(String message) {
+  myOLED.clrScr(); // Очищаем экран
+  // Сдвигаем предыдущие сообщения вниз
+  for (int i = maxMessages - 1; i > 0; i--) {
+    messages[i] = messages[i - 1];
+    yPos[i] = yPos[i - 1] + 12;
+  }
+  // Добавляем новое сообщение на верх экрана
+  messages[0] = message;
+  yPos[0] = 0;
+  // Выводим сообщения на экран
+  for (int i = 0; i < maxMessages; i++) {
+    if (yPos[i] < 64) { // Используем фиксированную высоту экрана вместо getHeight()
+      myOLED.print(messages[i], CENTER, yPos[i]);
+    }
+  }
+  myOLED.update();
+}
+
 void radioSetup() {             // настройка радио
   radio.begin();                // активировать модуль
   radio.setAutoAck(1);          // режим подтверждения приёма, 1 вкл 0 выкл
@@ -74,6 +98,7 @@ void radioSetup() {             // настройка радио
   radio.setDataRate(RF24_1MBPS); // скорость обмена
   // должна быть одинакова на приёмнике и передатчике!
   // при самой низкой скорости имеем самую высокую чувствительность и дальность!!
+
   radio.powerUp();         // начать работу
   radio.startListening();  // начинаем слушать эфир, мы приёмный модуль
 }
